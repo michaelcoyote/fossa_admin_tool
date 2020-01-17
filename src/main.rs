@@ -41,7 +41,7 @@ where
 fn get_orgs(baseurl: &str,
             api_token: &str,
             orgname: &str,
-            debug: bool) -> Result<(), reqwest::Error> {
+            debug: bool) -> Result<Vec<Org>, reqwest::Error> {
     let client =  reqwest::Client::new();
     let token_string = format!("token {}", api_token);
 
@@ -54,19 +54,7 @@ fn get_orgs(baseurl: &str,
         println!("HTTP Response: {}", response.status());
     }
     let orgs: Vec<Org> = response.json()?;
-    for o in orgs.iter() {
-        println!("{:>col1$}  {:col2$}  {:col3$}  {}  {}",
-                 o.id ,
-                 o.title,
-                 o.access_level,
-                 o.created,
-                 o.contributors_updated,
-                 col1=6,
-                 col2=30,
-                 col3=9);
-    }
-    Ok(())
-
+    Ok(orgs)
 }
 
 ///
@@ -88,6 +76,17 @@ fn main() {
     let baseurl = "https://app.fossa.com/";
     let api_token = env::var("FOSSA_API_KEY")
         .expect("FOSSA_API_KEY environment variable not found");
-    get_orgs(&baseurl, &api_token, &opts.orgname, opts.debug)
+    let orgs = get_orgs(&baseurl, &api_token, &opts.orgname, opts.debug)
         .expect("OOPS: problem getting orgs");
+    for o in orgs.iter() {
+        println!("{:>col1$}  {:col2$}  {:col3$}  {}  {}",
+                 o.id ,
+                 o.title,
+                 o.access_level,
+                 o.created,
+                 o.contributors_updated,
+                 col1=6,
+                 col2=30,
+                 col3=9);
+    }
 }
