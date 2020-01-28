@@ -21,22 +21,32 @@ struct Org {
     title: String,
     access_level: String,
     created: String,
-    #[serde(deserialize_with="parse_results")]
+    #[serde(deserialize_with="parse_u32")]
+    contributor_count: u32,
+    #[serde(deserialize_with="parse_string")]
     contributors_updated: String,
 }
 
 
-// Turn nulls into strings in the input which gives us nice looking data
+// Turn nulls into proper types in the input which gives us nice looking data
 // Some Deserialiazer magic wrapping a map function wrapping unwrap_or (etc)
 // Stolen from here (and reformatted for clarity):
 // https://stackoverflow.com/questions/44205435/how-to-deserialize-a-json-file-which-contains-null-values-using-serde
-fn parse_results<'de, D>(d: D) -> Result<String, D::Error>
+// TODO There is proably a way to parameterize the type and make this more portable &
+// eleminate duplication.
+fn parse_string<'de, D>(d: D) -> Result<String, D::Error>
 where 
-    D: Deserializer<'de>,
-{
+    D: Deserializer<'de>, {
         Deserialize::deserialize(d)
             .map(|x: Option<_>| x.unwrap_or("none".to_string()))
 }
+fn parse_u32<'de, D>(d: D) -> Result<u32, D::Error>
+where 
+    D: Deserializer<'de>, {
+        Deserialize::deserialize(d)
+            .map(|x: Option<_>| x.unwrap_or(0 as u32))
+}
+
 
 fn get_orgs(baseurl: &str,
             api_token: &str,
@@ -79,14 +89,16 @@ fn main() {
     let orgs = get_orgs(&baseurl, &api_token, &opts.orgname, opts.debug)
         .expect("OOPS: problem getting orgs");
     for o in orgs.iter() {
-        println!("{:>col1$}  {:col2$}  {:col3$}  {}  {}",
+        println!("{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}",
                  o.id ,
                  o.title,
                  o.access_level,
+                 o.contributor_count,
                  o.created,
                  o.contributors_updated,
                  col1=6,
                  col2=30,
-                 col3=9);
+                 col3=9,
+                 col4=4);
     }
 }
