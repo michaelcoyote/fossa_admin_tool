@@ -33,7 +33,7 @@ struct Org {
 // Stolen from here (and reformatted for clarity):
 // https://stackoverflow.com/questions/44205435/how-to-deserialize-a-json-file-which-contains-null-values-using-serde
 // TODO There is proably a way to parameterize the type and make this more portable &
-// eleminate duplication.
+// eliminate duplication.
 fn parse_string<'de, D>(d: D) -> Result<String, D::Error>
 where 
     D: Deserializer<'de>, {
@@ -76,9 +76,13 @@ struct CliOpts {
     #[structopt(short, long)]
     debug: bool,
 
-    /// org name
-    #[structopt(short, long, default_value = "Macrosoft")]
-    orgname: String,
+    /// Organization name for search
+    #[structopt(short, long, conflicts_with = "setid")]
+    orgname: Option<String>,
+
+    /// Organization ID to set
+    #[structopt(short, long, conflicts_with = "orgname")]
+    setid: Option<u32>
 }
 
 fn main() {
@@ -86,19 +90,26 @@ fn main() {
     let baseurl = "https://app.fossa.com/";
     let api_token = env::var("FOSSA_API_KEY")
         .expect("FOSSA_API_KEY environment variable not found");
-    let orgs = get_orgs(&baseurl, &api_token, &opts.orgname, opts.debug)
-        .expect("OOPS: problem getting orgs");
-    for o in orgs.iter() {
-        println!("{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}",
-                 o.id ,
-                 o.title,
-                 o.access_level,
-                 o.contributor_count,
-                 o.created,
-                 o.contributors_updated,
-                 col1=6,
-                 col2=30,
-                 col3=9,
-                 col4=4);
-    }
+    match (opts.orgname, opts.setid) {
+        (None, _) => ()
+        (_, None) => ()
+        (_, Some(setid)) => { println!("{:?}", setid) }
+        (Some(orgname), _) => {
+            let orgs = get_orgs(&baseurl, &api_token, &orgname, opts.debug)
+                .expect("OOPS: problem getting orgs");
+            for o in orgs.iter() {
+                println!("{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}",
+                         o.id ,
+                         o.title,
+                         o.access_level,
+                         o.contributor_count,
+                         o.created,
+                         o.contributors_updated,
+                         col1=6,
+                         col2=30,
+                         col3=9,
+                         col4=4);
+            }
+        }
+    };
 }
