@@ -67,6 +67,22 @@ fn get_orgs(baseurl: &str,
     Ok(orgs)
 }
 
+fn format_org(org: &Org) -> String {
+    format!(
+        "{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}\n",
+        org.id.to_string(),
+        org.title,
+        org.access_level,
+        org.contributor_count.to_string(),
+        org.created,
+        org.contributors_updated,
+        col1 = 6,
+        col2 = 36,
+        col3 = 10,
+        col4 = 4
+    )
+}
+
 ///
 /// Make Admin Fast!!1!ONE
 /// Specifically admin tasks like looking up org ids and switching orgs
@@ -91,25 +107,20 @@ fn main() {
     let api_token = env::var("FOSSA_API_KEY")
         .expect("FOSSA_API_KEY environment variable not found");
     match (opts.orgname, opts.setid) {
-        (None, _) => ()
-        (_, None) => ()
-        (_, Some(setid)) => { println!("{:?}", setid) }
         (Some(orgname), _) => {
             let orgs = get_orgs(&baseurl, &api_token, &orgname, opts.debug)
                 .expect("OOPS: problem getting orgs");
-            for o in orgs.iter() {
-                println!("{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}",
-                         o.id ,
-                         o.title,
-                         o.access_level,
-                         o.contributor_count,
-                         o.created,
-                         o.contributors_updated,
-                         col1=6,
-                         col2=30,
-                         col3=9,
-                         col4=4);
-            }
-        }
+            let mut table: String = "".to_string();
+            for org in orgs.iter() {
+                table.push_str(&format_org(org));
+            };
+            println!("{}", table)
+        },
+        (_, Some(setid)) => {
+            println!("{:?}", setid)
+        },
+        (_, _) => {
+            println!("Unsupported configuration: check help")
+        },
     };
 }
