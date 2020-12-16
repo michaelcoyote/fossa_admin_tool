@@ -67,6 +67,28 @@ fn get_orgs(baseurl: &str,
     Ok(orgs)
 }
 
+fn set_org(baseurl: &str,
+           api_token: &str,
+           orgname: &str,
+           debug: bool) -> Result<Vec<Org>, reqwest::Error> {
+    // curl 'https://app.fossa.com/api/users/14602' \
+    // -X PUT \
+    // --data-raw 'organizationId=11665'
+    let client =  reqwest::Client::new();
+    let token_string = format!("token {}", api_token);
+
+    let url = format!("{}api/users/{}", baseurl, userid);
+    let mut response = client.get(&url)
+        .header("Authorization", &token_string )
+        .send()?;
+    if debug {
+        println!("URL Sent: {}", url);
+        println!("HTTP Response: {}", response.status());
+    }
+    let orgs: Vec<Org> = response.json()?;
+    Ok(orgs)
+}
+
 fn format_org(org: &Org) -> String {
     format!(
         "{:>col1$}  {:col2$}  {:col3$}  {:col4$}  {}  {}\n",
